@@ -309,6 +309,7 @@ class TransactionController extends Controller
         $request->merge([
             'harga_jual' => (int) str_replace('.', '', $request->harga_jual),
             'dp' => (int) str_replace('.', '', $request->dp),
+            'pelunasan' => (int) str_replace('.', '', $request->pelunasan),
             'potongan' => (int) str_replace('.', '', $request->potongan),
             'potongan_bpjs' => (int) str_replace('.', '', $request->potongan_bpjs),
         ]);
@@ -385,6 +386,7 @@ class TransactionController extends Controller
                 'tgl_selesai_janji' => $request->tgl_selesai_janji,
                 'no_legalisasi' => $request->no_legalisasi,
                 'tgl_legalisasi' => $request->tgl_legalisasi,
+                'tgl_refraksi' => $request->tgl_refraksi,
                 'catatan' => $request->catatan,
 
                 'od_sc' => $request->od_sc,
@@ -423,13 +425,14 @@ class TransactionController extends Controller
 
                 'harga_jual' => $request->harga_jual,
                 'dp' => $request->dp,
+                'pelunasan' => $request->pelunasan,
                 'potongan' => $request->potongan,
                 'potongan_bpjs' => $request->potongan_bpjs,
-                'sisa' => max(0, $request->harga_jual - $request->dp - ($request->potongan ?? 0) - ($request->potongan_bpjs ?? 0)),
+                'sisa' => max(0, $request->harga_jual - $request->dp - ($request->pelunasan ?? 0) - ($request->potongan ?? 0) - ($request->potongan_bpjs ?? 0)),
 
                 'total_harga' => $request->harga_jual ?? 0,
                 'total_bayar' => max(0, ($request->harga_jual ?? 0) - ($request->potongan ?? 0) - ($request->potongan_bpjs ?? 0)),
-                'bayar' => $request->dp ?? 0,
+                'bayar' => ($request->dp ?? 0) + ($request->pelunasan ?? 0),
                 'diskon_nominal' => ($request->potongan ?? 0) + ($request->potongan_bpjs ?? 0),
             ];
 
@@ -528,7 +531,7 @@ class TransactionController extends Controller
                     $medicalRecordService = app(\App\Services\MedicalRecordService::class);
                     $mr = $medicalRecordService->saveFromTransaction($patient->id, $request->all());
                     $trx->update(['medical_record_id' => $mr->id]);
-                    
+
                     // Soft delete old medical record if this is an edit
                     if ($request->id && isset($oldMedicalRecordId) && $oldMedicalRecordId != $mr->id) {
                         $oldMr = \App\Models\MedicalRecord::find($oldMedicalRecordId);

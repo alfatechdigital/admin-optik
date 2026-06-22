@@ -33,6 +33,7 @@ class Transaction extends Model
 
         // DP SYSTEM
         'dp',
+        'pelunasan',
         'sisa',
 
         // Pembayaran
@@ -87,6 +88,7 @@ class Transaction extends Model
         'tgl_selesai_janji',
         'no_legalisasi',
         'tgl_legalisasi',
+        'tgl_refraksi',
 
         // JSON/Extra
         'catatan',
@@ -102,6 +104,7 @@ class Transaction extends Model
         'tgl_selesai_janji' => 'date:Y-m-d',
         'tgl_order' => 'date:Y-m-d',
         'tgl_faktur' => 'date:Y-m-d',
+        'tgl_refraksi' => 'date:Y-m-d',
     ];
 
     // Auto-generate nomor transaksi

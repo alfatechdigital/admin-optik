@@ -6,8 +6,8 @@
 @push('styles')
     <style>
         /* =============================================
-           ROOT & BASE
-        ============================================= */
+                   ROOT & BASE
+                ============================================= */
         :root {
             --primary: #0d6efd;
             --primary-dark: #0b5ed7;
@@ -28,8 +28,8 @@
         }
 
         /* =============================================
-           WIZARD & UI (Rest of CSS)
-        ============================================= */
+                   WIZARD & UI (Rest of CSS)
+                ============================================= */
         .wizard-steps {
             display: flex;
             align-items: center;
@@ -810,7 +810,7 @@
     MODALS
     ============================================= --}}
     <!-- Search Modal -->
-    <div class="modal fade" id="searchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="searchModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius:18px;backdrop-filter:blur(16px);">
                 <div class="modal-header border-0 pb-0">

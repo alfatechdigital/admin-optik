@@ -22,7 +22,7 @@
      * Uses dd/mm/yyyy display format, submits Y-m-d to server
      */
     function initAllDatepickers() {
-        document.querySelectorAll('.datepicker').forEach(function(el) {
+        document.querySelectorAll('.datepicker').forEach(function (el) {
             if (el._flatpickr) return; // already initialized
             flatpickr(el, {
                 dateFormat: 'Y-m-d',
@@ -219,20 +219,20 @@
             const noTrx = noTrxEl.value.trim();
             const tglEl = document.getElementById('tgl_faktur');
             const tgl = tglEl.value;
-            
-            if (!noTrx) { 
-                Swal.fire({icon: 'warning', title: 'Data Belum Lengkap', text: 'No Faktur tidak boleh kosong.', confirmButtonText: 'Baik, saya perbaiki'});
+
+            if (!noTrx) {
+                Swal.fire({ icon: 'warning', title: 'Data Belum Lengkap', text: 'No Faktur tidak boleh kosong.', confirmButtonText: 'Baik, saya perbaiki' });
                 noTrxEl.focus();
                 noTrxEl.classList.add('is-invalid');
-                return false; 
+                return false;
             }
             noTrxEl.classList.remove('is-invalid');
-            
-            if (!tgl) { 
-                Swal.fire({icon: 'warning', title: 'Data Belum Lengkap', text: 'Tanggal faktur tidak boleh kosong.', confirmButtonText: 'Baik, saya perbaiki'});
+
+            if (!tgl) {
+                Swal.fire({ icon: 'warning', title: 'Data Belum Lengkap', text: 'Tanggal faktur tidak boleh kosong.', confirmButtonText: 'Baik, saya perbaiki' });
                 tglEl.focus();
                 tglEl.classList.add('is-invalid');
-                return false; 
+                return false;
             }
             tglEl.classList.remove('is-invalid');
             return true;
@@ -253,7 +253,7 @@
                 return false;
             }
             dokterEl.classList.remove('is-invalid');
-            
+
             const nikEl = document.getElementById('nik');
             const nik = nikEl ? nikEl.value.trim() : '';
             if (nik && !/^\d{16}$/.test(nik)) {
@@ -284,7 +284,7 @@
                 return false;
             }
             if (noBpjsEl) noBpjsEl.classList.remove('is-invalid');
-            
+
             const telpEl = document.querySelector('input[name="telp"]');
             const telp = telpEl ? telpEl.value.trim() : '';
             if (telp && !/^\d{9,15}$/.test(telp)) {
@@ -866,7 +866,13 @@
             cart.push({ type, nama, seri, warna, keterangan: ket, harga, qty, product_id: prodId, kode_produk: kodeProduk });
             snackbar(`Ditambahkan ke keranjang.`, 'success');
         }
+        console.log("Data yang akan dimasukkan ke cart:", {
+            type: type, // Ini adalah variabel type yang kita tentukan tadi
+            nama: nama
+        });
 
+        // Lihat isi keranjang saat ini
+        console.log("Isi cart saat ini:", cart);
         processCart();
         clearProductSearch();
         document.getElementById('new_item_qty').value = '1';
@@ -890,17 +896,19 @@
     const inputPotongan = document.getElementById('input_potongan');
     const inputPotonganBpjs = document.getElementById('input_potongan_bpjs');
     const inputDp = document.getElementById('input_dp');
+    const inputPelunasan = document.getElementById('input_pelunasan');
     const inputSisa = document.getElementById('input_sisa');
 
     function calculateSisa() {
         const h = parseAngka(inputHargaJual.value);
         const p = document.getElementById('bpjs').checked ? parseAngka(inputPotonganBpjs.value) : parseAngka(inputPotongan.value);
         const d = parseAngka(inputDp.value);
-        const sisa = Math.max(0, h - p - d);
+        const pelunasan = parseAngka(inputPelunasan.value);
+        const sisa = Math.max(0, h - p - d - pelunasan);
         inputSisa.value = formatRibuan(sisa);
 
         const dpWarn = document.getElementById('dp-warning');
-        if (d > h && h > 0) dpWarn.classList.remove('d-none');
+        if (d + pelunasan > h && h > 0) dpWarn.classList.remove('d-none');
         else dpWarn.classList.add('d-none');
 
         // Proteksi Status Ambil: Tidak bisa "Sudah Diambil" jika Sisa > 0
@@ -923,12 +931,14 @@
     function setLunas() {
         const h = parseAngka(inputHargaJual.value);
         const p = document.getElementById('bpjs').checked ? parseAngka(inputPotonganBpjs.value) : parseAngka(inputPotongan.value);
-        const sisaLunas = Math.max(0, h - p);
-        inputDp.value = formatRibuan(sisaLunas);
+        const d = parseAngka(inputDp.value);
+        const sisaLunas = Math.max(0, h - p - d);
+        inputPelunasan.value = formatRibuan(sisaLunas);
         calculateSisa();
     }
 
-    [inputPotongan, inputPotonganBpjs, inputDp].forEach(el => {
+    [inputPotongan, inputPotonganBpjs, inputDp, inputPelunasan].forEach(el => {
+        if (!el) return;
         el.addEventListener('input', function () {
             this.value = formatRibuan(parseAngka(this.value));
             calculateSisa();
@@ -961,6 +971,7 @@
         const alamat = formatFieldText(document.querySelector('textarea[name="alamat"]')?.value, '—');
         const namaDokter = formatFieldText(document.getElementById('nama_dokter')?.value, '—');
         const tglResep = formatDateInput(document.querySelector('input[name="tgl_resep"]')?.value);
+        const tglRefraksi = formatDateInput(document.querySelector('input[name="tgl_refraksi"]')?.value);
         const catatanResep = formatFieldText(document.querySelector('textarea[name="catatan_resep"]')?.value, '—');
         const lensaKet = formatFieldText(document.getElementById('lensa_ket')?.value, '—');
         const ketFrame = formatFieldText(document.querySelector('input[name="keterangan_frame"]')?.value, '—');
@@ -1031,6 +1042,7 @@
                 <div class="col-sm-3"><strong>Alamat</strong><div>${alamat}</div></div>
                 <div class="col-sm-3"><strong>Dokter / Klinik</strong><div>${namaDokter}</div></div>
                 <div class="col-sm-3"><strong>Tanggal Resep</strong><div>${tglResep}</div></div>
+                <div class="col-sm-3"><strong>Tgl Refraksi</strong><div>${tglRefraksi}</div></div>
                 <div class="col-sm-3"><strong>Catatan Resep</strong><div>${catatanResep}</div></div>
             </div>
         </div>
@@ -1120,6 +1132,7 @@
         const potongan = parseAngka(inputPotongan.value);
         const potonganBpjs = parseAngka(inputPotonganBpjs.value);
         const dp = parseAngka(inputDp.value);
+        const pelunasan = parseAngka(inputPelunasan.value);
         const sisa = parseAngka(inputSisa.value);
 
         document.getElementById('checkout-preview-payments').innerHTML = `
@@ -1129,6 +1142,7 @@
                 <div class="col-3"><strong>Harga Jual</strong><div>Rp ${formatRibuan(hargaJual)}</div></div>
                 ${typeFaktur.toLowerCase() === 'bpjs' ? `<div class="col-3"><strong>Potongan BPJS</strong><div>Rp ${formatRibuan(potonganBpjs)}</div></div>` : ''}
                 <div class="col-3"><strong>DP</strong><div>Rp ${formatRibuan(dp)}</div></div>
+                <div class="col-3"><strong>Pelunasan</strong><div>Rp ${formatRibuan(pelunasan)}</div></div>
                 <div class="col-3"><strong>Sisa Tagihan</strong><div>Rp ${formatRibuan(sisa)}</div></div>
             </div>
         </div>
@@ -1164,7 +1178,6 @@
         }
 
         calculateSisa();
-        checkPriceLow();
     }
 
     /* ==========================================================
@@ -1292,12 +1305,12 @@
         document.getElementById('display-no-trx').textContent = trx.no_transaksi || '—';
 
         const fm = document.getElementById('pos-form');
-        const sv = (sel, val) => { 
-            const el = fm.querySelector(sel); 
+        const sv = (sel, val) => {
+            const el = fm.querySelector(sel);
             if (el) {
-                el.value = val; 
+                el.value = val;
                 if (val) el.placeholder = val;
-            } 
+            }
         };
 
         // Parse date string safely WITHOUT timezone conversion
@@ -1366,14 +1379,15 @@
         sv('input[name="asal_resep"]', trx.asal_resep || '');
         sv('input[name="no_legalisasi"]', trx.no_legalisasi || '');
         setDatepickerValue(fm.querySelector('input[name="tgl_legalisasi"]'), getOnlyDate(trx.tgl_legalisasi));
+        setDatepickerValue(fm.querySelector('input[name="tgl_refraksi"]'), getOnlyDate(trx.tgl_refraksi));
         sv('textarea[name="catatan_resep"]', trx.catatan_resep || '');
 
         // Step 2 — Refraksi (Load from Medical Record sub-tables)
         const allFields = ['sc', 'sph', 'cyl', 'axis', 'add', 'mpd', 'prism', 'cc'];
         const mr = trx.medical_record;
-        
+
         masterDataSnapshot = {}; // Reset snapshot for comparison
-        
+
         if (mr) {
             // Map Refraction (ref_)
             if (mr.refraction) {
@@ -1390,7 +1404,7 @@
                     });
                 });
             }
-            
+
             // Map Prescription (presc_)
             if (mr.prescription) {
                 allFields.forEach(f => {
@@ -1407,7 +1421,7 @@
                     });
                 });
             }
-            
+
             // Map Old Glasses (og_)
             if (mr.old_glasses) {
                 allFields.forEach(f => {
@@ -1473,6 +1487,7 @@
 
         // Step 5 — Finance (harga_jual otomatis dari cart via processCart)
         inputDp.value = formatRibuan(parseFloat(trx.dp || trx.bayar || 0));
+        if (inputPelunasan) inputPelunasan.value = formatRibuan(parseFloat(trx.pelunasan || 0));
 
         // Radios (trigger logic first)
         const tf = trx.typefaktur == 2 ? 'bpjs' : 'tunai';
@@ -1636,7 +1651,7 @@
     document.getElementById('pos-form').addEventListener('submit', function (e) {
         e.preventDefault();
         for (let s = 1; s <= 5; s++) {
-            if (!validateStep(s)) { 
+            if (!validateStep(s)) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Data Belum Lengkap',
@@ -1644,8 +1659,8 @@
                     confirmButtonText: 'Baik, saya periksa',
                     confirmButtonColor: '#3085d6'
                 });
-                goStep(s); 
-                return; 
+                goStep(s);
+                return;
             }
         }
 
@@ -1686,14 +1701,14 @@
                     }).then(() => {
                         window.location.href = '{{ route("transactions.index") }}?just_saved=' + data.data.id;
                     });
-                } else { 
+                } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Oops, Terjadi Kendala',
                         html: data.message || 'Mohon periksa kembali isian Anda ya.',
                         confirmButtonText: 'Baik, saya mengerti',
                         confirmButtonColor: '#d33'
-                    }).then(() => window.location.reload()); 
+                    }).then(() => window.location.reload());
                 }
             })
             .catch(err => {

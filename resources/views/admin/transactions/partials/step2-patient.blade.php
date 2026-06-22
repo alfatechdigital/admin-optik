@@ -92,13 +92,18 @@
                             <input type="text" name="tgl_resep" class="form-control form-control-sm datepicker"
                                 value="{{ date('Y-m-d') }}" placeholder="dd/mm/yyyy" autocomplete="off">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">No Legalisasi</label>
                             <input type="text" name="no_legalisasi" class="form-control form-control-sm">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">Tgl Legalisasi</label>
                             <input type="text" name="tgl_legalisasi" class="form-control form-control-sm datepicker"
+                                placeholder="dd/mm/yyyy" autocomplete="off">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tgl Refraksi</label>
+                            <input type="text" name="tgl_refraksi" class="form-control form-control-sm datepicker"
                                 placeholder="dd/mm/yyyy" autocomplete="off">
                         </div>
                         <div class="col-12">
