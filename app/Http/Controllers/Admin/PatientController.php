@@ -218,7 +218,7 @@ class PatientController extends Controller
     {
         $patient->load([
             'medicalRecords' => function ($query) {
-                $query->latest('visit_date')->take(5);
+                $query->latest('visit_date');
             },
             'medicalRecords.refraction',
             'medicalRecords.oldGlasses',

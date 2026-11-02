@@ -192,12 +192,306 @@ class TransactionController extends Controller
             'pesanan_besar' => 'admin.transactions.print.pesanan_besar',
             'bon_3_rangkap' => 'admin.transactions.print.bon_3_rangkap',
             'bon_1_rangkap' => 'admin.transactions.print.bon_1_rangkap',
+            'pelunasan' => 'admin.transactions.print.pelunasan',
+            'label' => 'admin.transactions.print.label',
             'formulir_bpjs' => 'admin.transactions.print.formulir_bpjs',
         ];
 
         $viewName = $views[$type] ?? $views['garansi'];
 
         return view($viewName, compact('transaction'));
+    }
+
+    public function downloadBpjs(Transaction $transaction)
+    {
+        $transaction->load(['patient', 'kasir', 'items.product', 'medicalRecord']);
+
+        $markup = $transaction->tambahan['markup'] ?? null;
+        if ($markup) {
+            $transaction->harga_jual = $markup['harga_jual'] ?? $transaction->harga_jual;
+            $transaction->potongan = $markup['potongan'] ?? $transaction->potongan;
+            $transaction->potongan_bpjs = $markup['potongan_bpjs'] ?? $transaction->potongan_bpjs;
+            $transaction->dp = $markup['dp'] ?? $transaction->dp;
+            $transaction->sisa = $markup['sisa'] ?? $transaction->sisa;
+            $transaction->total_bayar = $markup['total_bayar'] ?? $transaction->total_bayar;
+            $transaction->total_harga = $markup['harga_jual'] ?? $transaction->total_harga;
+            $transaction->diskon_nominal = ($markup['potongan'] ?? 0) + ($markup['potongan_bpjs'] ?? 0);
+            $transaction->bayar = $markup['dp'] ?? $transaction->bayar;
+
+            if (!empty($markup['items'])) {
+                $newItems = collect($markup['items'])->map(function ($i) {
+                    $item = new \App\Models\TransactionItem();
+                    $item->forceFill($i);
+                    return $item;
+                });
+                $transaction->setRelation('items', $newItems);
+            }
+        }
+
+        $template = new \PhpOffice\PhpWord\TemplateProcessor(resource_path('views/admin/transactions/print/formbpjs.docx'));
+
+        $template->setValue('nama_pasien', $transaction->patient->nama ?? $transaction->nama_pasien ?? '-');
+        $template->setValue('no_bpjs', $transaction->patient->no_bpjs ?? $transaction->no_bpjs ?? '-');
+        $template->setValue('alamat', $transaction->patient->alamat ?? $transaction->alamat_pasien ?? '-');
+        $template->setValue(
+            'tanggal',
+            \Carbon\Carbon::parse($transaction->tgl_order ?? $transaction->created_at)
+                ->locale('id')
+                ->translatedFormat('d F Y')
+        );
+        $template->setValue('1', $transaction->od_sph ?: '-'); // OD SPH
+        $template->setValue('2', $transaction->od_cyl ?: '-'); // OD CYL
+        $template->setValue('3', $transaction->od_axis ?: '-'); // OD AXIS
+        $template->setValue('4', $transaction->od_add ?: '-'); // OD ADD
+        $template->setValue('5', $transaction->os_sph ?: '-'); // OS SPH
+        $template->setValue('6', $transaction->os_cyl ?: '-'); // OS CYL
+        $template->setValue('7', $transaction->os_axis ?: '-'); // OS AXIS
+        $template->setValue('8', $transaction->os_add ?: '-'); // OS ADD
+
+        $template->setValue('add_plus', $transaction->od_add ?: ($transaction->os_add ?: '-'));
+        $template->setValue('dv', $transaction->od_mpd ?: ($transaction->os_mpd ?: '-'));
+
+        $frameName = '-';
+        $lensaName = '-';
+        $framePrice = 0;
+        $lensaPrice = 0;
+
+        foreach ($transaction->items as $item) {
+            $nameLower = strtolower($item->nama_produk);
+            if (str_contains($nameLower, 'frame')) {
+                $frameName = $item->nama_produk;
+                $framePrice += $item->subtotal;
+            } elseif (str_contains($nameLower, 'lensa')) {
+                $lensaName = $item->nama_produk;
+                $lensaPrice += $item->subtotal;
+            } else {
+                if ($frameName === '-') {
+                    $frameName = $item->nama_produk;
+                    $framePrice += $item->subtotal;
+                } else {
+                    $lensaName = $item->nama_produk;
+                    $lensaPrice += $item->subtotal;
+                }
+            }
+        }
+
+        if ($frameName === '-' && $transaction->kode_frame) {
+            $frameName = trim($transaction->kode_frame . ' ' . $transaction->nama_produk);
+        }
+        if ($lensaName === '-' && $transaction->lensa) {
+            $lensaName = $transaction->lensa;
+        }
+        if ($framePrice == 0 && $lensaPrice == 0) {
+            $framePrice = $transaction->harga_jual;
+        }
+
+        $template->setValue('lensa', $lensaName);
+        $template->setValue('frame', $frameName);
+        // 1. Hitung total secara dinamis dari variabel harga komponen
+        $totalBiaya = $lensaPrice + $framePrice;
+
+        // 2. Terapkan nilai ke template dengan format Rupiah
+        $template->setValue('harga_lensa', number_format($lensaPrice, 0, ',', '.'));
+        $template->setValue('harga_frame', number_format($framePrice, 0, ',', '.'));
+        $template->setValue('total_biaya', number_format($totalBiaya, 6, ',', '.'));
+        $template->setValue('bpjs_cover', number_format($transaction->potonganBpjs, 0, ',', '.'));
+        $template->setValue('selisih_bayar', number_format($transaction->total_bayar, 0, ',', '.'));
+
+        $filename = 'Form_BPJS_' . str_replace('/', '_', $transaction->no_transaksi) . '_' . str_replace(' ', '_', $transaction->patient->nama ?? $transaction->nama_pasien ?? 'Pasien') . '.docx';
+        $tempFile = tempnam(sys_get_temp_dir(), 'bpjs');
+        $template->saveAs($tempFile);
+
+        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+    }
+
+    public function downloadNotaBesar(Transaction $transaction, Request $request)
+    {
+        $transaction->load(['patient', 'kasir', 'items.product', 'medicalRecord']);
+
+        $markup = $transaction->tambahan['markup'] ?? null;
+        if ($markup) {
+            $transaction->harga_jual = $markup['harga_jual'] ?? $transaction->harga_jual;
+            $transaction->potongan = $markup['potongan'] ?? $transaction->potongan;
+            $transaction->potongan_bpjs = $markup['potongan_bpjs'] ?? $transaction->potongan_bpjs;
+            $transaction->dp = $markup['dp'] ?? $transaction->dp;
+            $transaction->sisa = $markup['sisa'] ?? $transaction->sisa;
+            $transaction->total_bayar = $markup['total_bayar'] ?? $transaction->total_bayar;
+            $transaction->total_harga = $markup['harga_jual'] ?? $transaction->total_harga;
+            $transaction->diskon_nominal = ($markup['potongan'] ?? 0) + ($markup['potongan_bpjs'] ?? 0);
+            $transaction->bayar = $markup['dp'] ?? $transaction->bayar;
+
+            if (!empty($markup['items'])) {
+                $newItems = collect($markup['items'])->map(function ($i) {
+                    $item = new \App\Models\TransactionItem();
+                    $item->forceFill($i);
+                    return $item;
+                });
+                $transaction->setRelation('items', $newItems);
+            }
+        }
+
+        $template = new \PhpOffice\PhpWord\TemplateProcessor(resource_path('views/admin/transactions/print/nota besar.docx'));
+
+        $showDetail = $request->query('show_detail', '1') === '1';
+
+        $harga = $transaction->harga_jual ?? $transaction->total_harga ?? 0;
+        $potongan = $transaction->potongan ?? $transaction->diskon_nominal ?? 0;
+        $potonganBpjs = $transaction->potongan_bpjs ?? 0;
+        $tipeBpjs = $transaction->patient->tipe_bpjs ?? $transaction->tipe_bpjs ?? '1';
+        $totalHarusDibayar = $transaction->total_bayar ?? ($harga - $potongan - $potonganBpjs);
+        $namaKasir = $transaction->kasir->name ?? 'Kasir';
+
+        $tglFormatted = \Carbon\Carbon::parse($transaction->tgl_order ?? $transaction->created_at)
+            ->locale('id')
+            ->translatedFormat('j F Y');
+
+        // Main placeholders
+        $template->setValue('no', $transaction->no_transaksi);
+        $template->setValue('no_transaksi', $transaction->no_transaksi);
+
+        $namaPasien = $transaction->patient->nama ?? ($transaction->nama_pasien ?? 'UMUM');
+        $template->setValue('from', $namaPasien);
+        $template->setValue('nama_pasien', $namaPasien);
+
+        $template->setValue('date', $tglFormatted);
+
+        $template->setValue('all', number_format($harga, 0, ',', '.'));
+        $template->setValue('harga', 'Rp. ' . number_format($harga, 0, ',', '.'));
+
+        $template->setValue('pay', number_format($totalHarusDibayar, 0, ',', '.'));
+        $template->setValue('total', 'Rp. ' . number_format($totalHarusDibayar, 0, ',', '.'));
+
+        $terbilangText = $this->terbilangNotaBesar($totalHarusDibayar);
+        $template->setValue('word', $terbilangText);
+        $template->setValue('terbilang', $terbilangText);
+        $template->setValue('kasir', $namaKasir);
+
+        // --- 1. DISKON / POTONGAN ---
+        if ($potongan > 0) {
+            $template->setValue('sale', number_format($potongan, 0, ',', '.'));
+            $template->setValue('potongan', 'Rp. ' . number_format($potongan, 0, ',', '.'));
+            try {
+                $template->cloneRow('row_diskon', 1);
+            } catch (\Exception $e) {
+            }
+        } else {
+            $template->setValue('sale', '');
+            $template->setValue('potongan', '');
+            $template->setValue('Diskon', '');
+            try {
+                // Menghapus total 1 baris tabel diskon
+                $template->cloneRow('row_diskon', 0);
+            } catch (\Exception $e) {
+            }
+        }
+
+        // --- 2. POTONGAN BPJS ---
+        $isBpjs = ($transaction->typefaktur == 2 || $potonganBpjs > 0 || !empty($transaction->no_bpjs) || !empty($transaction->patient?->no_bpjs));
+        if ($isBpjs && $potonganBpjs > 0) {
+            $template->setValue('bpjs', number_format($potonganBpjs, 0, ',', '.'));
+            $template->setValue('tipe', $tipeBpjs);
+            $template->setValue('tipe_bpjs', $tipeBpjs);
+            try {
+                $template->cloneRow('row_bpjs', 1);
+            } catch (\Exception $e) {
+            }
+        } else {
+            $template->setValue('bpjs', '');
+            $template->setValue('tipe', '');
+            $template->setValue('tipe_bpjs', '');
+            $template->setValue('Potongan BPJS Kelas ${tipe}', '');
+            try {
+                // Menghapus total 1 baris tabel BPJS
+                $template->cloneRow('row_bpjs', 0);
+            } catch (\Exception $e) {
+            }
+        }
+
+        // Processing items (${for} / ${nama_produk}):
+        $items = $transaction->items;
+        if ($items->count() > 0) {
+            $rowVar = 'for';
+            try {
+                try {
+                    $template->cloneRow('for', $items->count());
+                    $rowVar = 'for';
+                } catch (\Exception $eRow) {
+                    $template->cloneRow('nama_produk', $items->count());
+                    $rowVar = 'nama_produk';
+                }
+
+                foreach ($items as $index => $item) {
+                    $i = $index + 1;
+                    $penyebutQty = strtolower(trim($this->penyebutNotaBesar($item->qty)));
+                    $forText = $item->qty . '(' . $penyebutQty . ') ' . $item->nama_produk;
+
+                    $template->setValue($rowVar . '#' . $i, $forText);
+                    $template->setValue('qty#' . $i, $item->qty . '(' . $penyebutQty . ')');
+                    $template->setValue('nama_produk#' . $i, $item->nama_produk);
+
+                    $priceVal = $showDetail ? 'Rp. ' . number_format($item->harga_satuan * $item->qty, 0, ',', '.') : '';
+                    $template->setValue('price#' . $i, $priceVal);
+                }
+            } catch (\Exception $e) {
+                $forLines = [];
+                $priceLines = [];
+
+                foreach ($items as $item) {
+                    $penyebutQty = strtolower(trim($this->penyebutNotaBesar($item->qty)));
+                    $forLines[] = $item->qty . '(' . $penyebutQty . ') ' . $item->nama_produk;
+                    $priceLines[] = 'Rp. ' . number_format($item->harga_satuan * $item->qty, 0, ',', '.');
+                }
+
+                $joinedFor = implode("<w:br/>", $forLines);
+                $template->setValue('for', $joinedFor);
+                $template->setValue('nama_produk', $joinedFor);
+                $template->setValue('qty', '');
+                $template->setValue('price', $showDetail ? implode("<w:br/>", $priceLines) : '');
+            }
+        } else {
+            $template->setValue('for', '-');
+            $template->setValue('nama_produk', '-');
+            $template->setValue('qty', '');
+            $template->setValue('price', '');
+        }
+
+        $filename = 'Nota_Besar_' . str_replace('/', '_', $transaction->no_transaksi) . '.docx';
+        $tempFile = tempnam(sys_get_temp_dir(), 'nota_besar');
+        $template->saveAs($tempFile);
+
+        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+    }
+    private function penyebutNotaBesar($nilai)
+    {
+        $nilai = abs($nilai);
+        $huruf = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+        $temp = "";
+        if ($nilai < 12) {
+            $temp = " " . $huruf[$nilai];
+        } else if ($nilai < 20) {
+            $temp = $this->penyebutNotaBesar($nilai - 10) . " Belas";
+        } else if ($nilai < 100) {
+            $temp = $this->penyebutNotaBesar($nilai / 10) . " Puluh" . $this->penyebutNotaBesar($nilai % 10);
+        } else if ($nilai < 200) {
+            $temp = " Seratus" . $this->penyebutNotaBesar($nilai - 100);
+        } else if ($nilai < 1000) {
+            $temp = $this->penyebutNotaBesar($nilai / 100) . " Ratus" . $this->penyebutNotaBesar($nilai % 100);
+        } else if ($nilai < 2000) {
+            $temp = " Seribu" . $this->penyebutNotaBesar($nilai - 1000);
+        } else if ($nilai < 1000000) {
+            $temp = $this->penyebutNotaBesar($nilai / 1000) . " Ribu" . $this->penyebutNotaBesar($nilai % 1000);
+        } else if ($nilai < 1000000000) {
+            $temp = $this->penyebutNotaBesar($nilai / 1000000) . " Juta" . $this->penyebutNotaBesar($nilai % 1000000);
+        }
+        return $temp;
+    }
+
+    private function terbilangNotaBesar($nilai)
+    {
+        if ($nilai == 0)
+            return "Nol Rupiah";
+        $hasil = trim($this->penyebutNotaBesar($nilai));
+        return $hasil . " Rupiah";
     }
 
     public function destroy(Transaction $transaction)
@@ -384,6 +678,7 @@ class TransactionController extends Controller
                 'tgl_datang_faset' => $request->tgl_datang_faset,
                 'tgl_selesai_faset' => $request->tgl_selesai_faset,
                 'tgl_selesai_janji' => $request->tgl_selesai_janji,
+                'tgl_diambil' => $request->tgl_diambil,
                 'no_legalisasi' => $request->no_legalisasi,
                 'tgl_legalisasi' => $request->tgl_legalisasi,
                 'tgl_refraksi' => $request->tgl_refraksi,
@@ -496,6 +791,7 @@ class TransactionController extends Controller
                     $trx->items()->create([
                         'product_id' => $product ? $product->id : null,
                         'nama_produk' => $item['nama'] ?? ($product->nama ?? 'Unknown'),
+                        'type' => $item['type'] ?? null,
                         'qty' => $qty,
                         'harga_satuan' => floatval($item['harga'] ?? 0),
                         'subtotal' => floatval($item['harga'] ?? 0) * $qty
@@ -526,19 +822,11 @@ class TransactionController extends Controller
 
             DB::commit();
 
-            if ($request->save_as_new_medical == "1" && $patient) {
+            if ($patient) {
                 try {
                     $medicalRecordService = app(\App\Services\MedicalRecordService::class);
                     $mr = $medicalRecordService->saveFromTransaction($patient->id, $request->all());
                     $trx->update(['medical_record_id' => $mr->id]);
-
-                    // Soft delete old medical record if this is an edit
-                    if ($request->id && isset($oldMedicalRecordId) && $oldMedicalRecordId != $mr->id) {
-                        $oldMr = \App\Models\MedicalRecord::find($oldMedicalRecordId);
-                        if ($oldMr) {
-                            $oldMr->delete(); // Soft delete
-                        }
-                    }
                 } catch (\Exception $e) {
                     \Log::error("Failed to save medical record from POS: " . $e->getMessage());
                 }

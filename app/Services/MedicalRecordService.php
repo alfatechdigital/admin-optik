@@ -19,23 +19,48 @@ class MedicalRecordService
      */
     public function saveFromTransaction($patientId, array $data)
     {
-        $medicalRecord = MedicalRecord::create([
-            'patient_id' => $patientId,
-            'user_id' => Auth::id(),
-            'visit_date' => $data['tgl_resep'] ?? $data['tanggal_kunjungan'] ?? now()->toDateString(),
-            'complaint' => $data['catatan_resep'] ?? $data['keluhan'] ?? null,
-        ]);
+        $medicalRecordId = $data['history_dropdown'] ?? $data['medical_record_id'] ?? null;
+        $saveAsNew = isset($data['save_as_new_medical']) ? ($data['save_as_new_medical'] == "1") : true;
+
+        $medicalRecord = null;
+        if (!$saveAsNew && $medicalRecordId) {
+            $medicalRecord = MedicalRecord::find($medicalRecordId);
+        }
+
+        $visitDate = $data['tgl_resep'] ?? $data['tgl_faktur'] ?? $data['tanggal_kunjungan'] ?? now()->toDateString();
+        $complaint = $data['catatan_resep'] ?? $data['keluhan'] ?? null;
+
+        if (!$medicalRecord) {
+            $medicalRecord = MedicalRecord::create([
+                'patient_id' => $patientId,
+                'user_id' => Auth::id(),
+                'visit_date' => $visitDate,
+                'complaint' => $complaint,
+            ]);
+        } else {
+            $medicalRecord->update([
+                'user_id' => Auth::id(),
+                'visit_date' => $visitDate,
+                'complaint' => $complaint ?? $medicalRecord->complaint,
+            ]);
+        }
 
         // 1. Old Glasses (og_)
         $ogData = $this->extractByPrefix($data, 'og_');
         if ($this->hasClinicalData($ogData)) {
-            $medicalRecord->oldGlasses()->create($ogData);
+            $medicalRecord->oldGlasses()->updateOrCreate(
+                ['medical_record_id' => $medicalRecord->id],
+                $ogData
+            );
         }
 
         // 2. Prescription (presc_)
         $prescData = $this->extractByPrefix($data, 'presc_');
         if ($this->hasClinicalData($prescData)) {
-            $medicalRecord->prescription()->create($prescData);
+            $medicalRecord->prescription()->updateOrCreate(
+                ['medical_record_id' => $medicalRecord->id],
+                $prescData
+            );
         }
 
         // 3. Refraction (ref_ or standard names)
@@ -62,7 +87,10 @@ class MedicalRecordService
             'os_cc' => $data['os_cc'] ?? null,
         ];
         if ($this->hasClinicalData($refData)) {
-            $medicalRecord->refraction()->create($refData);
+            $medicalRecord->refraction()->updateOrCreate(
+                ['medical_record_id' => $medicalRecord->id],
+                $refData
+            );
         }
 
         return $medicalRecord;

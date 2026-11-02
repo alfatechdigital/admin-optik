@@ -83,12 +83,13 @@
     @php
         // Mengabaikan markup JSON, data diambil murni dari kolom utama database
         $d_items = $transaction->items;
-        $d_harga = $transaction->total_harga ?? 0;
+        $d_harga = $transaction->harga_jual ?? 0;
         $d_potongan = $transaction->potongan ?? 0;
         $d_potongan_bpjs = $transaction->potongan_bpjs ?? 0;
         $d_total_bayar = $transaction->total_bayar ?? max(0, $d_harga - $d_potongan - $d_potongan_bpjs);
         $d_dp = $transaction->dp ?? 0;
-        $d_sisa = $transaction->sisa ?? max(0, $d_total_bayar - $d_dp);
+        $d_pelunasan = $transaction->pelunasan ?? 0;
+        $d_sisa = $transaction->sisa ?? max(0, $d_total_bayar - $d_dp - $d_pelunasan);
     @endphp
     <div class="row g-4">
         <!-- Header Invoice -->
@@ -120,13 +121,13 @@
                             };
                         @endphp
                         <!-- <span class="badge {{ $badgeColor }} rounded-pill status-badge fs-6 me-3">{{ strtoupper($transaction->status) }}</span>
-                                 -->
+                                                                     -->
                         <a href="{{ route('transactions.index') }}" class="btn btn-outline-secondary rounded-pill px-4">
                             <i class="bi bi-arrow-left me-1"></i> Kembali
                         </a>
                         <!-- <a href="{{ route('transactions.create', $transaction->id) }}" class="btn btn-primary rounded-pill px-4 shadow-sm">
-                                    <i class="bi bi-pencil-square me-1"></i> Edit di POS
-                                </a> -->
+                                                                        <i class="bi bi-pencil-square me-1"></i> Edit di POS
+                                                                    </a> -->
                     </div>
                 </div>
             </div>
@@ -249,13 +250,13 @@
                             @endif
                         </div>
 
-                        <!-- Ukuran Kacamata Lama -->
+                        <!-- Ukuran KacamataLama -->
                         @if($transaction->medicalRecord->oldGlasses)
                             <div class="mb-4">
                                 <div class="d-flex align-items-center gap-2 mb-2">
                                     <span class="badge bg-secondary bg-opacity-10 text-secondary border px-3 py-2"
                                         style="font-size: 0.78rem;">
-                                        <i class="bi bi-eyeglasses me-1"></i>Ukuran Kacamata Lama
+                                        <i class="bi bi-eyeglasses me-1"></i>Ukuran Kacamata
                                     </span>
                                 </div>
                                 <div class="table-responsive bg-white rounded-3 border">
@@ -502,6 +503,31 @@
                                 {{ $transaction->tgl_legalisasi ? \Carbon\Carbon::parse($transaction->tgl_legalisasi)->format('d/m/Y') : '-' }}
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="info-label">Tanggal Diambil</div>
+                            <div class="info-value">
+                                {{ $transaction->tgl_diambil ? \Carbon\Carbon::parse($transaction->tgl_diambil)->format('d/m/Y') : '-' }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-label">Tanggal selesai janji</div>
+                            <div class="info-value">
+                                {{ $transaction->tgl_selesai_janji ? \Carbon\Carbon::parse($transaction->tgl_selesai_janji)->format('d/m/Y') : '-' }}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="info-label">Status Ambil</div>
+                            <div class="info-value text-uppercase">
+                                @if($transaction->diambil == 1 || strtolower($transaction->diambil) === 'ya' || $transaction->diambil == '1')
+                                    Sudah Diambil
+                                @elseif($d_sisa > 0)
+                                    Belum Lunas
+                                @else
+                                    Siap Diambil
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -510,6 +536,59 @@
 
         <!-- Sisi Kanan (Pasien & Info Finansial) -->
         <div class="col-lg-5">
+
+            @php
+                $isBpjs = $transaction->typefaktur == 2;
+                $bpjsNumber = $transaction->no_bpjs ?: ($transaction->patient->no_bpjs ?? null);
+                $bpjsClass = $isBpjs ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25' : 'bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25';
+            @endphp
+
+            <!-- Ringkasan Invoice -->
+            <div class="card glass-card">
+                <div class="card-body p-4">
+                    <h6 class="section-title"><i class="bi bi-receipt"></i> Ringkasan Invoice</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-label">No. Transaksi</div>
+                            <div class="info-value">{{ $transaction->no_transaksi }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Tanggal Faktur</div>
+                            <div class="info-value">
+                                {{ $transaction->tgl_faktur ? \Carbon\Carbon::parse($transaction->tgl_faktur)->format('d F Y') : $transaction->created_at->format('d F Y') }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Tipe Transaksi</div>
+                            <div class="info-value text-uppercase">
+                                @if($isBpjs)
+                                    <i class="bi bi-shield-plus me-1"></i>BPJS
+                                @else
+                                    <i class="bi bi-wallet2 me-1"></i>Umum
+                                @endif
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Status Transaksi</div>
+                            <div class="info-value text-capitalize">{{ $transaction->status ?: '-' }}</div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="info-label">Metode Bayar</div>
+                            <div class="info-value">{{ $transaction->metode_bayar ?: '-' }}</div>
+                        </div>
+                        @if($isBpjs)
+                            <div class="col-md-12">
+                                <div class="info-label">No. BPJS</div>
+                                <div class="info-value">{{ $bpjsNumber ?: '-' }}</div>
+                            </div>
+                        @endif
+                        <div class="col-md-12">
+                            <div class="info-label">Kasir</div>
+                            <div class="info-value">{{ $transaction->kasir->name ?? 'Sistem' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Data Pasien -->
             <div class="card glass-card">
@@ -546,7 +625,7 @@
                     </div>
 
                     <div class="info-label">Asal Resep / Rekomendasi / Dokter</div>
-                    <div class="info-value mb-0">
+                    <div class="info-value mb-3">
                         @php
                             $displayResep = $transaction->asal_resep ?: ($transaction->nama_dokter ?: '-');
                         @endphp
@@ -557,6 +636,73 @@
                             -
                         @endif
                     </div>
+
+                    <div class="row g-3">
+                        @if($transaction->patient && $transaction->patient->nik)
+                            <div class="col-md-6">
+                                <div class="info-label">NIK</div>
+                                <div class="info-value">{{ $transaction->patient->nik }}</div>
+                            </div>
+                        @endif
+                        <div class="col-md-6">
+                            <div class="info-label">Tanggal Resep</div>
+                            <div class="info-value">
+                                {{ $transaction->tgl_resep ? \Carbon\Carbon::parse($transaction->tgl_resep)->format('d F Y') : '-' }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Tanggal Refraksi</div>
+                            <div class="info-value">
+                                {{ $transaction->tgl_refraksi ? \Carbon\Carbon::parse($transaction->tgl_refraksi)->format('d F Y') : '-' }}
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="info-label">Catatan Resep / Transaksi</div>
+                            <div class="info-value">{{ $transaction->catatan ?: '-' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ringkasan Item -->
+            <div class="card glass-card">
+                <div class="card-body p-4">
+                    <h6 class="section-title"><i class="bi bi-list-ul"></i> Daftar Item Ringkas</h6>
+                    @php
+                        $summaryItems = $d_items && count($d_items) ? $d_items : [];
+                        $summaryQty = collect($summaryItems)->sum('qty');
+                    @endphp
+                    <div class="mb-3 text-muted small">{{ $summaryItems ? count($summaryItems) : 0 }} item, total qty
+                        {{ $summaryQty }}
+                    </div>
+                    @if($summaryItems && count($summaryItems) > 0)
+                        <div class="list-group list-group-flush">
+                            @foreach($summaryItems as $item)
+                                <div class="list-group-item py-2 px-0 border-0">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="fw-semibold">{{ $item->nama_produk ?? $item->nama ?? 'Item' }}</div>
+                                            <div class="small text-muted">
+                                                {{ $item->product->kode_produk ?? ($item->product_id ? '#' . $item->product_id : '-') }}
+                                                | Qty: {{ $item->qty }}
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-semibold">Rp
+                                                {{ number_format($item->subtotal ?? ($item->qty * $item->harga_satuan), 0, ',', '.') }}
+                                            </div>
+                                            <div class="small text-muted">Rp
+                                                {{ number_format($item->harga_satuan ?? 0, 0, ',', '.') }}/pcs
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-muted small">Tidak ada item terperinci. Lensa / frame akan ditampilkan di bagian Produk
+                            & Frame.</div>
+                    @endif
                 </div>
             </div>
 
@@ -585,13 +731,26 @@
                     <div class="d-flex justify-content-between mb-2">
                         <div class="info-label pt-1 text-white opacity-75">Potongan / Diskon (-)</div>
                         <div class="info-value mb-0 text-white opacity-75">Rp
-                            {{ number_format($d_potongan_bpjs, 0, ',', '.') }}
+                            {{ number_format($d_potongan, 0, ',', '.') }}
                         </div>
                     </div>
+                    @if(!empty($d_potongan_bpjs) && $d_potongan_bpjs > 0)
+                        <div class="d-flex justify-content-between mb-2">
+                            <div class="info-label pt-1 text-white opacity-75">Potongan BPJS</div>
+                            <div class="info-value mb-0 text-white opacity-75">
+                                Rp {{ number_format($d_potongan_bpjs, 0, ',', '.') }}
+                            </div>
+                        </div>
+                    @endif
 
                     <div class="d-flex justify-content-between mb-3 pb-3 border-bottom border-white border-opacity-25">
                         <div class="info-label pt-1 text-white opacity-75">Deposit / Dibayar</div>
                         <div class="info-value mb-0">Rp {{ number_format($d_dp, 0, ',', '.') }}</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-3 pb-3 border-bottom border-white border-opacity-25">
+                        <div class="info-label pt-1 text-white opacity-75">Pelunasan</div>
+                        <div class="info-value mb-0">Rp {{ number_format($d_pelunasan, 0, ',', '.') }}</div>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-end mt-2">
@@ -617,7 +776,7 @@
 
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
-                            <div class="info-label">Tanggal Rencana Ambil</div>
+                            <div class="info-label">Tanggal Rencana selesai</div>
                             <div class="info-value mb-0 fs-5 text-primary">
                                 @if($transaction->tgl_selesai_janji)
                                     <i

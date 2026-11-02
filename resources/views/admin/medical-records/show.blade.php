@@ -28,11 +28,29 @@
                             <span class="badge bg-secondary me-2">{{ $medicalRecord->patient->no_rm }}</span>
                             <span class="badge bg-primary">{{ $medicalRecord->visit_date->format('d M Y') }}</span>
                         </div>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
+                            @if(isset($patientRecords) && $patientRecords->count() > 0)
+                                <div class="d-flex align-items-center gap-1">
+                                    <label for="history_select" class="form-label mb-0 me-1 text-muted small fw-semibold">
+                                        <i class="bi bi-clock-history me-1"></i>Riwayat:
+                                    </label>
+                                    <select id="history_select" class="form-select form-select-sm border-primary shadow-sm" style="min-width: 220px;" onchange="if(this.value) window.location.href = this.value;">
+                                        @foreach($patientRecords as $rec)
+                                            @php
+                                                $docName = $rec->refraction->doctor_name ?? $rec->prescription->doctor_name ?? '-';
+                                                $visitDate = $rec->visit_date ? $rec->visit_date->format('d M Y') : '-';
+                                            @endphp
+                                            <option value="{{ route('medical-records.show', $rec) }}" {{ $rec->id == $medicalRecord->id ? 'selected' : '' }}>
+                                                {{ $visitDate }} — Dokter: {{ $docName }} {{ $rec->id == $medicalRecord->id ? '(Saat Ini)' : '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
                             @can('medical_record.edit')
-                                <a href="{{ route('medical-records.edit', $medicalRecord) }}" class="btn btn-warning btn-sm">
-                                    <i class="bi bi-pencil me-1"></i>Edit
-                                </a>
+                                <!-- <a href="{{ route('medical-records.edit', $medicalRecord) }}" class="btn btn-warning btn-sm">
+                                            <i class="bi bi-pencil me-1"></i>Edit
+                                        </a> -->
                             @endcan
                             <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
                                 <i class="bi bi-printer me-1"></i>Cetak
@@ -78,19 +96,26 @@
                                         <div class="text-muted" style="font-size:.72rem">Kanan</div>
                                     </th>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_sph ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_sph ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_cyl ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_cyl ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_axis ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_axis ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_prism ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_prism ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_add ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_add ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_mpd ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_mpd ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_cc ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->od_cc ?? null) }}</span>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>
@@ -98,19 +123,26 @@
                                         <div class="text-muted" style="font-size:.72rem">Kiri</div>
                                     </th>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_sph ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_sph ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_cyl ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_cyl ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_axis ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_axis ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_prism ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_prism ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_add ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_add ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_mpd ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_mpd ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_cc ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->oldGlasses->os_cc ?? null) }}</span>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -144,19 +176,26 @@
                                         <div class="text-muted" style="font-size:.72rem">Kanan</div>
                                     </th>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->od_sph ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->od_sph ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->od_cyl ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->od_cyl ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->od_axis ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->od_axis ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->od_prism ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->od_prism ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->od_add ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->od_add ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->od_mpd ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->od_mpd ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->od_cc ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->od_cc ?? null) }}</span>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>
@@ -164,19 +203,26 @@
                                         <div class="text-muted" style="font-size:.72rem">Kiri</div>
                                     </th>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->os_sph ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->os_sph ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->os_cyl ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->os_cyl ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->os_axis ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->os_axis ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->os_prism ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->os_prism ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->os_add ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->os_add ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->os_mpd ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->os_mpd ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->prescription->os_cc ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->prescription->os_cc ?? null) }}</span>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -241,21 +287,29 @@
                                         <div class="text-muted" style="font-size:.72rem">Kanan</div>
                                     </th>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->od_sc ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->od_sc ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->od_sph ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->od_sph ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->od_cyl ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->od_cyl ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->od_axis ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->od_axis ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->od_prism ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->od_prism ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->od_add ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->od_add ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->od_mpd ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->od_mpd ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->od_cc ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->od_cc ?? null) }}</span>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>
@@ -263,21 +317,29 @@
                                         <div class="text-muted" style="font-size:.72rem">Kiri</div>
                                     </th>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->os_sc ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->os_sc ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->os_sph ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->os_sph ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->os_cyl ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->os_cyl ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->os_axis ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->os_axis ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->os_prism ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->os_prism ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->os_add ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->os_add ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->os_mpd ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->os_mpd ?? null) }}</span>
+                                    </td>
                                     <td class="column-compact">
-                                        <span>{{ $fmt($medicalRecord->refraction->os_cc ?? null) }}</span></td>
+                                        <span>{{ $fmt($medicalRecord->refraction->os_cc ?? null) }}</span>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>

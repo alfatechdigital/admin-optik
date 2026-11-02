@@ -10,39 +10,49 @@
                 <p class="text-muted mb-4 small">Pilih format cetak untuk transaksi ini.</p>
 
                 <div class="d-grid gap-2 col-10 mx-auto">
-                    
+
                     <button
                         class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
                         onclick="doPrint('bon_3_rangkap')">
                         <i class="bi bi-file-earmark-ruled me-2"></i> Cetak Bon (3 Rangkap)
                     </button>
                     <button
-                         class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
+                        class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
                         onclick="doPrint('bon_1_rangkap')">
                         <i class="bi bi-receipt me-2"></i> Cetak Bon Standar
                     </button>
                     <button
-                         class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
+                        class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
                         onclick="doPrint('fasetan')">
                         <i class="bi bi-file-earmark-medical me-2"></i> Cetak Bon Fasetan
                     </button>
+                    <button
+                        class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
+                        onclick="doPrint('pelunasan')">
+                        <i class="bi bi-file-earmark-medical me-2"></i> Cetak Bon Pelunasan
+                    </button>
                     <button id="btn-print-bpjs"
-                         class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
+                        class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
                         onclick="doPrint('formulir_bpjs')">
                         <i class="bi bi-file-earmark-person me-2"></i> Cetak Form BPJS
                     </button>
                     <button
-                         class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
+                        class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
+                        onclick="doPrint('label')">
+                        <i class="bi bi-patch-check me-2"></i> Cetak Label
+                    </button>
+                    <button
+                        class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
                         onclick="doPrint('garansi')">
                         <i class="bi bi-patch-check me-2"></i> Cetak Kartu Garansi
                     </button>
                     <button
-                         class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
+                        class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
                         onclick="doPrint('pesanan_besar', 0)">
                         <i class="bi bi-file-earmark-text me-2"></i> Cetak Kwitansi Tanpa Perincian
                     </button>
                     <button
-                         class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
+                        class="btn btn-outline-primary rounded-pill py-2 shadow-sm mb-1 d-flex align-items-center justify-content-center"
                         onclick="doPrint('pesanan_besar', 1)">
                         <i class="bi bi-list-check me-2"></i> Cetak Kwitansi Dengan Perincian
                     </button>

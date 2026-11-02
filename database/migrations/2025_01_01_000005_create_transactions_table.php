@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('transactions', function (Blueprint $table) {
@@ -33,6 +32,7 @@ return new class extends Migration
             $table->decimal('potongan_bpjs', 15, 2)->default(0);
             $table->decimal('total_bayar', 15, 2)->default(0);
             $table->decimal('dp', 15, 2)->default(0);
+            $table->decimal('pelunasan', 15, 2)->default(0);
             $table->decimal('bayar', 15, 2)->default(0);
             $table->decimal('sisa', 15, 2)->default(0);
             $table->decimal('kembalian', 15, 2)->default(0);
@@ -73,6 +73,7 @@ return new class extends Migration
             // Produksi & Lab
             $table->string('no_legalisasi')->nullable();
             $table->date('tgl_legalisasi')->nullable();
+            $table->date('tgl_refraksi')->nullable();
             $table->date('tgl_faset')->nullable();
             $table->string('lab')->nullable();
             $table->string('tempat_faset')->nullable();

@@ -106,10 +106,8 @@
                             <input type="text" name="tgl_refraksi" class="form-control form-control-sm datepicker"
                                 placeholder="dd/mm/yyyy" autocomplete="off">
                         </div>
-                        <div class="col-12">
-                            <label class="form-label">Catatan Resep</label>
-                            <textarea name="catatan_resep" class="form-control form-control-sm" rows="2"
-                                placeholder="Instruksi tambahan..."></textarea>
+                        <div class="col-12"> <textarea name="catatan_resep" class="form-control form-control-sm"
+                                rows="2" placeholder="Instruksi tambahan..." hidden></textarea>
                         </div>
                     </div>
                 </div>
@@ -317,6 +315,13 @@
                         });
                     });
                 });
+
+                if (data.doctor_name) {
+                    const dokterInput = document.getElementById('nama_dokter');
+                    if (dokterInput && !dokterInput.value) {
+                        dokterInput.value = data.doctor_name;
+                    }
+                }
 
                 checkForChanges();
             })

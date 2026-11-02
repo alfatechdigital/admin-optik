@@ -456,6 +456,54 @@ document.getElementById('mrForm').addEventListener('submit', function(e) {
                                 input.value = `${item.no_rm} — ${item.nama}`;
                                 hidden.value = item.id;
                                 resultBox.innerHTML = '';
+
+                                // Fetch existing medical record
+                                fetch(`{{ url('medical-records/by-patient') }}/${item.id}`)
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        if (Object.keys(data).length > 0) {
+                                            if (data.tanggal_kunjungan) document.querySelector('[name="tanggal_kunjungan"]').value = data.tanggal_kunjungan;
+                                            if (data.keluhan) document.querySelector('[name="keluhan"]').value = data.keluhan;
+
+                                            Object.entries(data).forEach(([key, val]) => {
+                                                const field = document.querySelector(`[name="${key}"]`);
+                                                if (field && val !== null) {
+                                                    field.value = val;
+                                                }
+                                            });
+
+                                            // Fill diagnosis specific inputs which use different names
+                                            if (data.ref_diagnosis) {
+                                                const el = document.getElementById('ref_diagnosis_search');
+                                                if(el) el.value = data.ref_diagnosis;
+                                            }
+                                            if (data.presc_diagnosis) {
+                                                const el = document.getElementById('rx_diagnosis_search');
+                                                if(el) el.value = data.presc_diagnosis;
+                                            }
+                                        } else {
+                                            // Reset all inputs if no data
+                                            document.querySelector('[name="keluhan"]').value = '';
+                                            const prefixes = ['og', 'ref', 'presc'];
+                                            const fields = ['sc', 'sph', 'cyl', 'axis', 'prism', 'add', 'mpd', 'cc'];
+                                            prefixes.forEach(prefix => {
+                                                ['od', 'os'].forEach(eye => {
+                                                    fields.forEach(f => {
+                                                        const el = document.querySelector(`[name="${prefix}_${eye}_${f}"]`);
+                                                        if (el) el.value = '';
+                                                    });
+                                                });
+                                                const doc = document.querySelector(`[name="${prefix}_doctor_name"]`);
+                                                if (doc) doc.value = '';
+                                                const exam = document.querySelector(`[name="${prefix}_exam_date"]`);
+                                                if (exam) exam.value = '';
+                                                const notes = document.querySelector(`[name="${prefix}_notes"]`);
+                                                if (notes) notes.value = '';
+                                            });
+                                            if(document.getElementById('ref_diagnosis_search')) document.getElementById('ref_diagnosis_search').value = '';
+                                            if(document.getElementById('rx_diagnosis_search')) document.getElementById('rx_diagnosis_search').value = '';
+                                        }
+                                    });
                             });
 
                             resultBox.appendChild(el);

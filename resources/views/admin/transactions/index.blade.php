@@ -46,7 +46,8 @@
 
 @section('content')
     <div class="card glass-card border-0 mb-4">
-        <div class="card-header bg-transparent border-0 p-4 d-flex flex-wrap gap-3 justify-content-between align-items-center">
+        <div
+            class="card-header bg-transparent border-0 p-4 d-flex flex-wrap gap-3 justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold text-primary d-flex align-items-center">
                 <i class="bi bi-receipt-cutoff me-2 fs-4"></i>Semua Transaksi
             </h5>
@@ -59,23 +60,26 @@
                 </div>
 
                 {{-- Filter Dropdown: Status Pengambilan --}}
-                <div class="input-group input-group-sm rounded-pill border shadow-sm bg-white overflow-hidden" style="width: 200px; transition: all 0.2s ease;">
-    <span class="input-group-text bg-white border-0 text-muted pe-1">
-        <i class="bi bi-box-seam-fill"></i>
-    </span>
-    
-    <select name="diambil" 
-            class="form-select border-0 ps-2 fw-semibold text-muted shadow-none" 
-            style="font-size: 0.85rem; cursor: pointer; background-color: transparent;" 
-            onchange="this.form.submit()">
-        <option value="" class="text-muted fw-normal">Semua Status Ambil</option>
-        <option value="1" {{ request('diambil') == '1' ? 'selected' : '' }} class="text-muted"> Sudah Diambil</option>
-        <option value="0" {{ request('diambil') == '0' ? 'selected' : '' }} class="text-muted"> Belum Diambil</option>
-    </select>
-</div>
+                <div class="input-group input-group-sm rounded-pill border shadow-sm bg-white overflow-hidden"
+                    style="width: 200px; transition: all 0.2s ease;">
+                    <span class="input-group-text bg-white border-0 text-muted pe-1">
+                        <i class="bi bi-box-seam-fill"></i>
+                    </span>
+
+                    <select name="diambil" class="form-select border-0 ps-2 fw-semibold text-muted shadow-none"
+                        style="font-size: 0.85rem; cursor: pointer; background-color: transparent;"
+                        onchange="this.form.submit()">
+                        <option value="" class="text-muted fw-normal">Semua Status Ambil</option>
+                        <option value="1" {{ request('diambil') == '1' ? 'selected' : '' }} class="text-muted"> Sudah Diambil
+                        </option>
+                        <option value="0" {{ request('diambil') == '0' ? 'selected' : '' }} class="text-muted"> Belum Diambil
+                        </option>
+                    </select>
+                </div>
 
                 {{-- Filter Range Tanggal --}}
-                <div class="input-group input-group-sm rounded-pill overflow-hidden shadow-sm flex-nowrap" style="width: auto;">
+                <div class="input-group input-group-sm rounded-pill overflow-hidden shadow-sm flex-nowrap"
+                    style="width: auto;">
                     <span class="input-group-text bg-white border-0 text-muted"><i class="bi bi-calendar3"></i></span>
                     <input type="date" name="from" class="form-control border-0 px-2" value="{{ request('from') }}"
                         title="Dari Tanggal" onchange="this.form.submit()">
@@ -85,7 +89,7 @@
                 </div>
             </form>
         </div>
-        
+
         <div class="table-responsive px-3 pb-3">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
@@ -104,7 +108,7 @@
                     @forelse($transactions as $trx)
                         @php
                             $markup = $trx->tambahan['markup'] ?? null;
-                            $d_total_bayar = $markup ? ($markup['total_bayar'] ?? $trx->total_bayar) : $trx->total_bayar;
+                            $d_total_bayar = $markup ? ($markup['harga_jual'] ?? $trx->harga_jual) : $trx->harga_jual;
                             $d_potongan_bpjs = $markup ? ($markup['potongan_bpjs'] ?? $trx->potongan_bpjs) : $trx->potongan_bpjs;
                             $d_sisa = $markup ? ($markup['sisa'] ?? $trx->sisa) : $trx->sisa;
                         @endphp
@@ -138,29 +142,35 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="text-muted small"><i class="bi bi-person-badge me-1"></i>{{ $trx->nama_dokter ?? '-' }}</span>
+                                <span class="text-muted small"><i
+                                        class="bi bi-person-badge me-1"></i>{{ $trx->nama_dokter ?? '-' }}</span>
                                 <br>
-                                <span class="text-muted small"><i class="bi bi-headset me-1"></i>{{ $trx->kasir->name ?? '-' }}</span>
+                                <span class="text-muted small"><i
+                                        class="bi bi-headset me-1"></i>{{ $trx->kasir->name ?? '-' }}</span>
                             </td>
                             <td class="fw-bold">Rp {{ number_format($d_total_bayar, 0, ',', '.') }}
                                 @if($markup)
                                     <span class="text-danger" title="Data telah disesuaikan">*</span>
                                 @endif
                                 @if($d_potongan_bpjs > 0)
-                                    <br><span class="text-success fw-semibold"><i class="bi bi-shield-check me-1"></i>Rp {{ number_format($d_potongan_bpjs, 0, ',', '.') }}</span>
+                                    <br><span class="text-success fw-semibold"><i class="bi bi-shield-check me-1"></i>Rp
+                                        {{ number_format($d_potongan_bpjs, 0, ',', '.') }}</span>
                                 @endif
-                            </td> 
+                            </td>
                             <td>
                                 @if($trx->status == 'batal')
-                                    <span class="badge bg-danger rounded-pill px-2 py-1 shadow-sm" style="font-size: 0.7rem">BATAL</span>
+                                    <span class="badge bg-danger rounded-pill px-2 py-1 shadow-sm"
+                                        style="font-size: 0.7rem">BATAL</span>
                                 @elseif($trx->diambil == 1 || strtolower($trx->diambil) == 'ya' || $trx->diambil == '1')
-                                    <span class="badge bg-primary rounded-pill px-2 py-1 shadow-sm" style="font-size: 0.7rem">DIAMBIL</span>
+                                    <span class="badge bg-primary rounded-pill px-2 py-1 shadow-sm"
+                                        style="font-size: 0.7rem">DIAMBIL</span>
                                 @elseif($d_sisa > 0)
                                     <span class="badge bg-danger rounded-pill px-2 py-1 shadow-sm" style="font-size: 0.7rem">
                                         -Rp {{ number_format($d_sisa, 0, ',', '.') }}
                                     </span>
                                 @else
-                                    <span class="badge bg-success rounded-pill px-2 py-1 shadow-sm" style="font-size: 0.7rem">LUNAS</span>
+                                    <span class="badge bg-success rounded-pill px-2 py-1 shadow-sm"
+                                        style="font-size: 0.7rem">LUNAS</span>
                                 @endif
                             </td>
                             <td>
@@ -171,26 +181,48 @@
                             </td>
                             <td class="text-end pe-4" x-data="{ statusSisa: {{ $d_sisa }} }">
                                 <div class="dropdown d-inline-block">
-                                    <button class="btn btn-sm btn-light rounded-circle shadow-sm" 
-                                            type="button" 
-                                            id="dropdownMenu{{ $trx->id }}" 
-                                            data-bs-toggle="dropdown" 
-                                            aria-expanded="false"
-                                            style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
+                                    <button class="btn btn-sm btn-light rounded-circle shadow-sm" type="button"
+                                        id="dropdownMenu{{ $trx->id }}" data-bs-toggle="dropdown" aria-expanded="false"
+                                        style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
                                         <i class="bi bi-three-dots-vertical fs-5 text-secondary"></i>
                                     </button>
 
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" aria-labelledby="dropdownMenu{{ $trx->id }}" style="min-width: 200px;">
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3"
+                                        aria-labelledby="dropdownMenu{{ $trx->id }}" style="min-width: 200px;">
                                         <li>
-                                            <a class="dropdown-item py-2 d-flex align-items-center text-secondary" href="{{ route('transactions.show', $trx) }}">
+                                            <a class="dropdown-item py-2 d-flex align-items-center text-secondary"
+                                                href="{{ route('transactions.show', $trx) }}">
                                                 <i class="bi bi-eye me-2 text-primary"></i> Lihat Detail
                                             </a>
                                         </li>
                                         <li>
-                                            <button type="button" class="dropdown-item py-2 d-flex align-items-center text-secondary" 
-                                                    onclick="openPrintModal({{ $trx->id }}, {{ $trx->typefaktur == 2 ? 'true' : 'false' }})">
+                                            <button type="button"
+                                                class="dropdown-item py-2 d-flex align-items-center text-secondary"
+                                                onclick="openPrintModal({{ $trx->id }}, {{ $trx->typefaktur == 2 ? 'true' : 'false' }})">
                                                 <i class="bi bi-printer me-2 text-secondary"></i> Cetak Transaksi
                                             </button>
+                                        </li>
+                                        @if($trx->typefaktur == 2 || $trx->potongan_bpjs > 0 || !empty($trx->no_bpjs))
+                                            <li>
+                                                <a class="dropdown-item py-2 d-flex align-items-center text-secondary"
+                                                    href="{{ route('transactions.download_bpjs', $trx->id) }}">
+                                                    <i class="bi bi-file-earmark-word me-2 text-info"></i> Download form bpjs
+                                                </a>
+                                            </li>
+                                        @endif
+                                        <li>
+                                            <a class="dropdown-item py-2 d-flex align-items-center text-secondary"
+                                                href="{{ route('transactions.download_nota_besar', ['transaction' => $trx->id, 'show_detail' => 1]) }}"
+                                                title="Download Nota Besar (Dengan Rinci)">
+                                                <i class="bi bi-file-earmark-word me-2 text-primary"></i> Download Nota Besar (Rinci)
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2 d-flex align-items-center text-secondary"
+                                                href="{{ route('transactions.download_nota_besar', ['transaction' => $trx->id, 'show_detail' => 0]) }}"
+                                                title="Download Nota Besar (Tanpa Rinci/Tanpa Price)">
+                                                <i class="bi bi-file-earmark-word me-2 text-secondary"></i> Download Nota Besar (Tanpa Rinci)
+                                            </a>
                                         </li>
 
                                         {{-- Menu Aksi Berdasarkan Status Pembayaran Asli Database ($trx->sisa) --}}
@@ -201,57 +233,63 @@
                                                     <form action="{{ route('pickup.confirm', $trx) }}" method="POST" class="d-inline">
                                                         @csrf
                                                         @method('PATCH')
-                                                        <button type="submit" class="dropdown-item py-2 d-flex align-items-center text-success fw-bold" onclick="return confirm('Proses serah terima barang? Status akan diubah menjadi Sudah Diambil.')">
+                                                        <button type="submit"
+                                                            class="dropdown-item py-2 d-flex align-items-center text-success fw-bold"
+                                                            onclick="return confirm('Proses serah terima barang? Status akan diubah menjadi Sudah Diambil.')">
                                                             <i class="bi bi-check-circle-fill me-2 text-success"></i> Ambil Kacamata
                                                         </button>
                                                     </form>
                                                 @else
                                                     {{-- Muncul jika masih ada sisa tagihan di database --}}
-                                                   
+
                                                 @endif
                                             </li>
                                         @endif
 
                                         @if($trx->status != 'batal')
                                             <li>
-                                                <form action="{{ route('transactions.destroy', $trx) }}" method="POST" onsubmit="return confirm('Hapus transaksi ini? Stok akan dikembalikan.')">
+                                                <form action="{{ route('transactions.destroy', $trx) }}" method="POST"
+                                                    onsubmit="return confirm('Hapus transaksi ini? Stok akan dikembalikan.')">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="dropdown-item py-2 d-flex align-items-center text-danger">
+                                                    <button type="submit"
+                                                        class="dropdown-item py-2 d-flex align-items-center text-danger">
                                                         <i class="bi bi-trash me-2 text-danger"></i> Hapus Transaksi
                                                     </button>
                                                 </form>
                                             </li>
                                         @endif
                                         <li>
-                                            <button type="button" class="dropdown-item py-2 d-flex align-items-center text-secondary" 
-                                                    onclick="openMarkupModal({{ $trx->id }}, {{ json_encode($trx->tambahan['markup'] ?? null) }}, {{ json_encode($trx->items) }}, {{ $trx->harga_jual }}, {{ $trx->dp }}, {{ $trx->sisa }}, {{ $trx->potongan }}, {{ $trx->potongan_bpjs }}, {{ $trx->total_bayar }})">
-                                                <i class="bi bi-pencil-square me-2 text-info"></i> Edit Data Transaksi
+                                            <button type="button"
+                                                class="dropdown-item py-2 d-flex align-items-center text-secondary"
+                                                onclick="openMarkupModal({{ $trx->id }}, {{ json_encode($trx->tambahan['markup'] ?? null) }}, {{ json_encode($trx->items) }}, {{ $trx->harga_jual }}, {{ $trx->dp }}, {{ $trx->sisa }}, {{ $trx->potongan }}, {{ $trx->potongan_bpjs }}, {{ $trx->total_bayar }})">
+                                                <i class="bi bi-pencil-square me-2 text-info"></i> Edit Tampilan Transaksi
                                             </button>
                                         </li>
 
-                                        <li><hr class="dropdown-divider bg-light"></li>
-<!-- 
+
                                         <li>
-                                            <a class="dropdown-item py-2 d-flex align-items-center text-secondary" href="{{ route('transactions.edit', ['transaction' => $trx->id, 'step' => 1]) }}">
-                                                <i class="bi bi-pencil-square me-2 text-warning"></i> Edit Data Transaksi (Step 1)
-                                            </a>
-                                        </li> -->
-                                        <li>
-                                            <a class="dropdown-item py-2 d-flex align-items-center text-secondary" href="{{ route('transactions.edit', ['transaction' => $trx->id, 'step' => 2]) }}">
-                                                <i class="bi bi-person me-2 text-warning"></i> Edit Pasien
+                                            <a class="dropdown-item py-2 d-flex align-items-center text-secondary"
+                                                href="{{ route('transactions.edit', ['transaction' => $trx->id, 'step' => 1]) }}">
+                                                <i class="bi bi-pencil-square me-2 text-warning"></i> Edit Database Transaksi
                                             </a>
                                         </li>
                                         <!-- <li>
-                                            <a class="dropdown-item py-2 d-flex align-items-center text-secondary" href="{{ route('transactions.edit', ['transaction' => $trx->id, 'step' => 3]) }}">
-                                                <i class="bi bi-box me-2 text-warning"></i> Edit Produk
-                                            </a>
-                                        </li> -->
-                                        <li>
-                                            <a class="dropdown-item py-2 d-flex align-items-center text-secondary" href="{{ route('transactions.edit', ['transaction' => $trx->id, 'step' => 4]) }}">
-                                                <i class="bi bi-file-earmark-text me-2 text-warning"></i> Edit Data Tambahan
-                                            </a>
-                                        </li>
+                                                                            <a class="dropdown-item py-2 d-flex align-items-center text-secondary" href="{{ route('transactions.edit', ['transaction' => $trx->id, 'step' => 2]) }}">
+                                                                                <i class="bi bi-person me-2 text-warning"></i> Edit Pasien
+                                                                            </a>
+                                                                        </li> -->
+                                        <!-- <li>
+                                                                            <a class="dropdown-item py-2 d-flex align-items-center text-secondary" href="{{ route('transactions.edit', ['transaction' => $trx->id, 'step' => 3]) }}">
+                                                                                <i class="bi bi-box me-2 text-warning"></i> Edit Produk
+                                                                            </a>
+                                                                        </li> -->
+                                        <!-- <li>
+                                                                    <a class="dropdown-item py-2 d-flex align-items-center text-secondary"
+                                                                        href="{{ route('transactions.edit', ['transaction' => $trx->id, 'step' => 4]) }}">
+                                                                        <i class="bi bi-file-earmark-text me-2 text-warning"></i> Edit Data Tambahan
+                                                                    </a>
+                                                                </li> -->
 
                                     </ul>
                                 </div>

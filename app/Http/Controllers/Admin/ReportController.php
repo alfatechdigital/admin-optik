@@ -34,7 +34,7 @@ class ReportController extends Controller
         $summary = [
             'total_transaksi' => $transactions->count(),
             'total_omzet'     => $transactions->sum('total_bayar'),
-            'total_diskon'    => $transactions->sum('diskon_nominal'),
+            'total_diskon'    => $transactions->sum('potongan'),
             'total_potongan_bpjs' => $transactions->sum('potongan_bpjs'),
             'rata_per_trx'    => $transactions->count()
                 ? round($transactions->sum('total_bayar') / $transactions->count())

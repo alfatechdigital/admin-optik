@@ -36,7 +36,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('api/rekam-medis-detail/{medicalRecord}', [MedicalRecordController::class, 'getDetailJson']);
         }
     );
-    
+
     // diagnosis routes
     Route::middleware(['permission:medical_record.view'])->group(
         function () {
@@ -61,7 +61,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('transactions', [TransactionController::class, 'store'])->name('transactions.store');
             Route::get('transactions/product/search', [TransactionController::class, 'searchProduct'])->name('transactions.product.search');
             Route::get('transactions/get-medical-records', [TransactionController::class, 'getMedicalRecords'])->name('transactions.medical-records');
-
+            Route::get('medical-records/by-patient/{patient_id}', [MedicalRecordController::class, 'getByPatient'])->name('medical-records.by-patient');
             // --- ADVANCED POS ROUTES ---
             Route::get('transactions/pos/nav', [TransactionController::class, 'posNav'])->name('transactions.pos.nav');
             Route::get('transactions/pos/search', [TransactionController::class, 'posSearch'])->name('transactions.pos.search');
@@ -79,6 +79,8 @@ Route::middleware(['auth'])->group(function () {
             Route::patch('/pickup/{transaction}/confirm', [PickupController::class, 'confirm'])->name('pickup.confirm');
 
             Route::get('transactions/{transaction}/print', [TransactionController::class, 'printView'])->name('transactions.print');
+            Route::get('transactions/{transaction}/download-bpjs', [TransactionController::class, 'downloadBpjs'])->name('transactions.download_bpjs');
+            Route::get('transactions/{transaction}/download-nota-besar', [TransactionController::class, 'downloadNotaBesar'])->name('transactions.download_nota_besar');
             Route::get('transactions/{transaction}', [TransactionController::class, 'show'])->name('transactions.show');
         }
     );

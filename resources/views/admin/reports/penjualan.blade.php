@@ -66,7 +66,9 @@
             <thead class="table-light">
                 <tr>
                     <th class="ps-3">No. Transaksi</th><th>Pasien</th><th>Items</th>
-                    <th>No BPJS</th><th>Potongan BPJS</th><th>Total Bayar</th><th>Metode</th><th>Tanggal</th>
+                    <th>Harga Jual</th><th>Diskon</th>
+                    <th>Potongan BPJS</th><th>Uang Muka</th><th>Pelunasan</th>
+                    <th>Total Bayar</th><th>Status</th><th>Tanggal</th>
                 </tr>
             </thead>
             <tbody>
@@ -79,10 +81,22 @@
                     </td>
                     <td>{{ $trx->patient->nama ?? 'Umum' }}</td>
                     <td>{{ $trx->items->sum('qty') }} item</td>
-                    <td>{{ $trx->patient->no_bpjs ?? '-' }}</td>
+                    <!-- harga jual adiambil dari tabel transaksi seperti yang lainnya -->
+                    <td>Rp {{ number_format($trx->harga_jual,0,',','.') }}</td>
+                    <td>{{ $trx->potongan > 0 ? 'Rp '.number_format($trx->potongan,0,',','.') : '-' }}</td>
                     <td>{{ $trx->potongan_bpjs > 0 ? 'Rp '.number_format($trx->potongan_bpjs,0,',','.') : '-' }}</td>
+                    <td>{{ $trx->uang_muka > 0 ? 'Rp '.number_format($trx->uang_muka,0,',','.') : '-' }}</td>
+                    <td>{{ $trx->pelunasan > 0 ? 'Rp '.number_format($trx->pelunasan,0,',','.') : '-' }}</td>
                     <td class="fw-semibold">Rp {{ number_format($trx->total_bayar,0,',','.') }}</td>
-                    <td>{{ ucfirst($trx->metode_bayar) }}</td>
+                    <td>
+                        @if($trx->status == 'lunas')
+                            <span class="badge bg-success">Lunas</span>
+                        @elseif($trx->status == 'belum lunas')
+                            <span class="badge bg-warning">Belum Lunas</span>
+                        @else
+                            <span class="badge bg-secondary">{{ ucfirst($trx->status) }}</span>
+                        @endif
+                    </td>
                     <td class="text-muted small">{{ $trx->created_at->format('d M Y H:i') }}</td>
                 </tr>
                 @empty

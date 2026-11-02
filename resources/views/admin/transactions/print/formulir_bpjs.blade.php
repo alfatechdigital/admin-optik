@@ -270,12 +270,13 @@
             $hargaProdukLain = 0;
 
             foreach ($transaction->items as $item) {
+                $itemType = strtolower($item->type ?? '');
                 $namaItem = strtolower($item->nama_produk);
 
-                if (str_contains($namaItem, 'lensa') || str_contains($namaItem, 'lens')) {
+                if ($itemType === 'lensa' || (!$itemType && (str_contains($namaItem, 'lensa') || str_contains($namaItem, 'lens')))) {
                     $listLensa[] = $item->nama_produk;
                     $hargaLensa += $item->subtotal;
-                } elseif (str_contains($namaItem, 'frame') || str_contains($namaItem, 'kacamata') || str_contains($namaItem, 'gelas')) {
+                } elseif ($itemType === 'frame' || (!$itemType && (str_contains($namaItem, 'frame') || str_contains($namaItem, 'kacamata') || str_contains($namaItem, 'gelas')))) {
                     $namaFrame = ($transaction->kode_frame ? $transaction->kode_frame . ' ' : '') . $item->nama_produk;
                     $listFrame[] = $namaFrame;
                     $hargaFrame += $item->subtotal;
@@ -320,6 +321,8 @@
                                         class="rf-dots">{{ $odCyl }}</span></div>
                                 <div class="rf-cell"><span class="rf-x">X</span> <span
                                         class="rf-dots">{{ $odAxis }}</span></div>
+                                <div class="rf-cell"><span class="rf-label">OD.MPD</span> <span
+                                        class="rf-dots">{{ $odMpd }}</span></div>
                             </div>
                         </div>
                     </td>
@@ -336,6 +339,8 @@
                                         class="rf-dots">{{ $osCyl }}</span></div>
                                 <div class="rf-cell"><span class="rf-x">X</span> <span
                                         class="rf-dots">{{ $osAxis }}</span></div>
+                                <div class="rf-cell"><span class="rf-label">OS.MPD</span> <span
+                                        class="rf-dots">{{ $osMpd }}</span></div>
                             </div>
                         </div>
                         <div class="refraction-container" style="margin-top: 5pt;">

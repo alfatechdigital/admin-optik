@@ -12,7 +12,11 @@ class MedicalRecordController extends Controller
 {
     public function index(Request $request)
     {
-        $query = MedicalRecord::with(['patient', 'createdBy']);
+        $latestIds = MedicalRecord::selectRaw('MAX(id) as id')
+            ->groupBy('patient_id');
+
+        $query = MedicalRecord::whereIn('id', $latestIds)
+            ->with(['patient', 'createdBy', 'refraction', 'prescription']);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -25,13 +29,13 @@ class MedicalRecordController extends Controller
         }
 
         if ($request->filled('from')) {
-            $query->whereDate('tanggal_kunjungan', '>=', $request->from);
+            $query->whereDate('visit_date', '>=', $request->from);
         }
         if ($request->filled('to')) {
-            $query->whereDate('tanggal_kunjungan', '<=', $request->to);
+            $query->whereDate('visit_date', '<=', $request->to);
         }
 
-        $records = $query->latest()->paginate(15)->withQueryString();
+        $records = $query->latest('visit_date')->latest('id')->paginate(15)->withQueryString();
 
         return view('admin.medical-records.index', compact('records'));
     }
@@ -60,7 +64,7 @@ class MedicalRecordController extends Controller
                 'keluhan' => 'nullable|string|max:255',
             ]);
 
-            // 2. CREATE MEDICAL RECORD
+            // 2. CREATE NEW MEDICAL RECORD
             $record = MedicalRecord::create([
                 'patient_id' => $request->patient_id,
                 'user_id' => Auth::id(),
@@ -80,18 +84,27 @@ class MedicalRecordController extends Controller
             }
             // dd(compact('oldData', 'refData', 'rxData'));
 
-            // 4. SIMPAN JIKA ADA ISI
+            // 4. SIMPAN JIKA ADA ISI MENGGUNAKAN updateOrCreate
 
             if ($this->hasValue($oldData)) {
-                $record->oldGlasses()->create($oldData);
+                $record->oldGlasses()->updateOrCreate(
+                    ['medical_record_id' => $record->id],
+                    $oldData
+                );
             }
 
             if ($this->hasValue($refData)) {
-                $record->refraction()->create($refData);
+                $record->refraction()->updateOrCreate(
+                    ['medical_record_id' => $record->id],
+                    $refData
+                );
             }
 
             if ($this->hasValue($rxData)) {
-                $record->prescription()->create($rxData);
+                $record->prescription()->updateOrCreate(
+                    ['medical_record_id' => $record->id],
+                    $rxData
+                );
             }
 
             DB::commit();
@@ -108,9 +121,16 @@ class MedicalRecordController extends Controller
 
     public function show(MedicalRecord $medicalRecord)
     {
-        $medicalRecord->load(['patient', 'createdBy', 'transaction.items.product']);
+        $medicalRecord->load(['patient', 'createdBy', 'transaction.items.product', 'refraction', 'prescription', 'oldGlasses']);
 
-        return view('admin.medical-records.show', compact('medicalRecord'));
+        $patientRecords = $medicalRecord->patient
+            ? MedicalRecord::where('patient_id', $medicalRecord->patient_id)
+                ->with(['refraction', 'prescription'])
+                ->latest('visit_date')
+                ->get()
+            : collect([$medicalRecord]);
+
+        return view('admin.medical-records.show', compact('medicalRecord', 'patientRecords'));
     }
 
     public function edit(MedicalRecord $medicalRecord, Request $request)
@@ -241,6 +261,53 @@ class MedicalRecordController extends Controller
         $flatten($medicalRecord->refraction, 'ref');
         $flatten($medicalRecord->prescription, 'presc');
 
+        $data['doctor_name'] = $medicalRecord->refraction?->doctor_name
+            ?? $medicalRecord->prescription?->doctor_name
+            ?? '';
+
+        return response()->json($data);
+    }
+
+    public function getByPatient($patient_id)
+    {
+        $medicalRecord = MedicalRecord::where('patient_id', $patient_id)->with(['oldGlasses', 'refraction', 'prescription'])->latest()->first();
+
+        if (!$medicalRecord) {
+            return response()->json([]);
+        }
+
+        $data = [
+            'tanggal_kunjungan' => $medicalRecord->visit_date,
+            'keluhan' => $medicalRecord->complaint,
+        ];
+
+        // Helper to flatten
+        $flatten = function ($obj, $prefix) use (&$data) {
+            $fields = ($prefix === 'ref')
+                ? ['sc', 'sph', 'cyl', 'axis', 'prism', 'add', 'mpd', 'cc', 'diagnosis', 'doctor_name', 'exam_date', 'notes']
+                : ['sph', 'cyl', 'axis', 'prism', 'add', 'mpd', 'cc', 'diagnosis', 'doctor_name', 'exam_date', 'notes'];
+            foreach (['od', 'os'] as $eye) {
+                foreach ($fields as $f) {
+                    if (in_array($f, ['diagnosis', 'doctor_name', 'exam_date', 'notes'])) {
+                        // These are typically at the table level, not per eye. We handle them separately below.
+                        continue;
+                    }
+                    $key = "{$eye}_{$f}";
+                    $data["{$prefix}_{$key}"] = $obj ? ($obj->$key ?? '') : '';
+                }
+            }
+            // non-eye specific fields
+            $data["{$prefix}_diagnosis"] = $obj ? ($obj->diagnosis ?? '') : '';
+            $data["{$prefix}_doctor_name"] = $obj ? ($obj->doctor_name ?? '') : '';
+            $data["{$prefix}_exam_date"] = $obj ? ($obj->exam_date ?? '') : '';
+            $data["{$prefix}_notes"] = $obj ? ($obj->notes ?? '') : '';
+        };
+
+        $flatten($medicalRecord->oldGlasses, 'og');
+        $flatten($medicalRecord->refraction, 'ref');
+        $flatten($medicalRecord->prescription, 'presc');
+
+        // Overwrite or append global rx values just in case if needed
         return response()->json($data);
     }
 

@@ -632,7 +632,19 @@
         document.getElementById('btn-load-history').style.display = 'none';
         document.getElementById('no_bpjs_container').style.display = 'none';
         document.getElementById('tipe_bpjs_container').style.display = 'none';
-        document.getElementById('history-tag-container').classList.add('d-none');
+        const hContainer = document.getElementById('history-tag-container');
+        if (hContainer) hContainer.classList.add('d-none');
+
+        const dropdown = document.getElementById('history_dropdown');
+        if (dropdown) {
+            dropdown.innerHTML = '<option value="">-- Buat Rekam Medis Baru (Kosong) --</option>';
+        }
+        const hCount = document.getElementById('history-count');
+        if (hCount) hCount.textContent = '0 Riwayat';
+
+        if (typeof resetAllInputs === 'function') {
+            resetAllInputs();
+        }
 
         // Reset potongan BPJS
         applyPotonganBpjs();
@@ -996,7 +1008,7 @@
 
         const lab = formatFieldText(document.querySelector('input[name="lab"]')?.value, '—');
         const tglOrder = formatDateInput(document.querySelector('input[name="tgl_order"]')?.value);
-        const tglLensaDatang = formatDateInput(document.querySelector('input[name="tgl_lensa_datang"]')?.value);
+        const tglLensaDatang = formatDateInput(document.querySelector('input[name="tgl_lensa_datang"]')?.value || document.querySelector('input[name="tgl_datang_faset"]')?.value);
         const tglFaset = formatDateInput(document.querySelector('input[name="tgl_faset"]')?.value);
         const tempatFaset = formatFieldText(document.querySelector('input[name="tempat_faset"]')?.value, '—');
         const tglSelesaiFaset = formatDateInput(document.querySelector('input[name="tgl_selesai_faset"]')?.value);
@@ -1141,6 +1153,7 @@
             <div class="d-flex justify-content-between flex-wrap row g-2">
                 <div class="col-3"><strong>Harga Jual</strong><div>Rp ${formatRibuan(hargaJual)}</div></div>
                 ${typeFaktur.toLowerCase() === 'bpjs' ? `<div class="col-3"><strong>Potongan BPJS</strong><div>Rp ${formatRibuan(potonganBpjs)}</div></div>` : ''}
+                <div class="col-3"><strong>Potongan</strong><div>Rp ${formatRibuan(potongan)}</div></div>
                 <div class="col-3"><strong>DP</strong><div>Rp ${formatRibuan(dp)}</div></div>
                 <div class="col-3"><strong>Pelunasan</strong><div>Rp ${formatRibuan(pelunasan)}</div></div>
                 <div class="col-3"><strong>Sisa Tagihan</strong><div>Rp ${formatRibuan(sisa)}</div></div>
@@ -1332,20 +1345,16 @@
         sv('textarea[name="catatan"]', trx.catatan || '');
 
         // Set date fields via flatpickr API so both hidden + visible inputs update
+        const tglLensaDatangValue = getOnlyDate(trx.tgl_datang_faset || trx.tgl_lensa_datang || trx.tgl_datang || '');
         setDatepickerValue(document.getElementById('tgl_order'), getOnlyDate(trx.tgl_order));
         setDatepickerValue(document.getElementById('tgl_faset'), getOnlyDate(trx.tgl_faset));
-        setDatepickerValue(document.getElementById('tgl_lensa_datang'), getOnlyDate(trx.tgl_datang_faset));
+        setDatepickerValue(document.getElementById('tgl_lensa_datang'), tglLensaDatangValue);
         setDatepickerValue(document.getElementById('tgl_selesai_faset'), getOnlyDate(trx.tgl_selesai_faset));
         setDatepickerValue(document.getElementById('tgl_selesai_janji'), getOnlyDate(trx.tgl_selesai_janji));
 
         // tgl_diambil: set value AND set radio button accordingly
         const tglDiambilVal = getOnlyDate(trx.tanggal_diambil || trx.tgl_diambil);
         setDatepickerValue(document.getElementById('tgl_diambil'), tglDiambilVal);
-        if (tglDiambilVal) {
-            document.getElementById('sudah').checked = true;
-        } else {
-            document.getElementById('belum').checked = true;
-        }
 
         // tgl_faktur
         const tglFakturVal = getOnlyDate(trx.tgl_faktur) || getOnlyDate(trx.tgl_order) || '{{ date('Y-m-d') }}';
@@ -1357,8 +1366,17 @@
         sv('input[name="nik"]', selectedNik);
         const selectedBpjs = p.no_bpjs || trx.no_bpjs || '';
         sv('input[name="no_bpjs"]', selectedBpjs);
-        const selectedTipeBpjs = p.tipe_bpjs || trx.tipe_bpjs || '';
-        sv('input[name="tipe_bpjs"]', selectedTipeBpjs);
+        
+        let selectedTipeBpjs = p.tipe_bpjs || trx.tipe_bpjs || '';
+        if (!selectedTipeBpjs && trx.typefaktur == 2) {
+             let pot = parseFloat(trx.potongan_bpjs || trx.diskon_nominal || 0);
+             if (pot == 330000) selectedTipeBpjs = '1';
+             else if (pot == 220000) selectedTipeBpjs = '2';
+             else if (pot == 165000) selectedTipeBpjs = '3';
+        }
+        const selTipe = document.getElementById('tipe_bpjs');
+        if (selTipe) selTipe.value = selectedTipeBpjs;
+
         sv('input[name="nama"]', p.nama || trx.nama_pasien || '');
         sv('textarea[name="alamat"]', p.alamat || trx.alamat_pasien || '');
         sv('input[name="telp"]', p.no_hp || trx.telp_pasien || '');
@@ -1491,13 +1509,13 @@
 
         // Radios (trigger logic first)
         const tf = trx.typefaktur == 2 ? 'bpjs' : 'tunai';
-        const db = trx.diambil == 1 ? 'sudah' : 'belum';
+        const db = (trx.diambil == 1 || trx.diambil == '1' || trx.diambil == 'ya') ? 'sudah' : 'belum';
         document.getElementById(tf).checked = true;
         document.getElementById(db).checked = true;
 
         // Potongan based on tipe faktur
         if (trx.typefaktur == 2) {
-            document.getElementById('input_potongan_bpjs').value = formatRibuan(parseFloat(trx.potongan || trx.diskon_nominal || 0));
+            document.getElementById('input_potongan_bpjs').value = formatRibuan(parseFloat(trx.potongan_bpjs || trx.diskon_nominal || 0));
             document.getElementById('input_potongan').value = 0;
 
             // Auto fill ui bpjs if found
