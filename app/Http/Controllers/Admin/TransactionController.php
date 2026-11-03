@@ -510,6 +510,24 @@ class TransactionController extends Controller
             ->with('success', 'Transaksi berhasil dihapus dan stok telah dikembalikan.');
     }
 
+    public function cancel(Transaction $transaction)
+    {
+        if ($transaction->status === 'batal') {
+            return back()->with('error', 'Transaksi ini sudah dibatalkan sebelumnya.');
+        }
+
+        DB::transaction(function () use ($transaction) {
+            foreach ($transaction->items as $item) {
+                if ($item->product) {
+                    $item->product->increment('stok', $item->qty);
+                }
+            }
+            $transaction->update(['status' => 'batal']);
+        });
+
+        return back()->with('success', 'Transaksi berhasil dibatalkan dan stok telah dikembalikan.');
+    }
+
     public function searchProduct(Request $request)
     {
         $products = Product::where('is_active', true)

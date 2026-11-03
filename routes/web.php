@@ -89,6 +89,7 @@ Route::middleware(['auth'])->group(function () {
         function () {
             Route::get('transactions/{transaction}/edit', [TransactionController::class, 'create'])->name('transactions.edit');
             Route::delete('transactions/{transaction}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
+            Route::post('transactions/{transaction}/cancel', [TransactionController::class, 'cancel'])->name('transactions.cancel');
             Route::post('transactions/{transaction}/markup', [TransactionController::class, 'saveMarkup'])->name('transactions.markup');
         }
     );

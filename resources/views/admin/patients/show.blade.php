@@ -385,12 +385,14 @@
                             </td>
                             <td class="text-end pe-3">
                                 @if($trx->status != 'batal')
+                                @can('transaction.edit')
                                 <form action="{{ route('transactions.cancel', $trx) }}" method="POST" class="d-inline" onsubmit="return confirm('Batalkan transaksi ini?')">
                                     @csrf
                                     <button type="submit" class="btn btn-xs btn-outline-danger" title="Batalkan">
                                         <i class="bi bi-x-lg"></i>
                                     </button>
                                 </form>
+                                @endcan
                                 @endif
                             </td>
                         </tr>
