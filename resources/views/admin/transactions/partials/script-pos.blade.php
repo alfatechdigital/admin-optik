@@ -1472,6 +1472,24 @@
                 });
             });
         }
+        // Ukuran kacamata kosong (mis. transaksi lama / rekam medis tanpa kacamata lama)
+        // -> isi otomatis dari Resep Dokter, lalu Hasil Refraksi, agar preview checkout terisi.
+        const ukuranFields = ['sph', 'cyl', 'axis', 'add', 'mpd', 'prism', 'cc'];
+        ['od', 'os'].forEach(eye => {
+            ukuranFields.forEach(f => {
+                const ogEl = document.getElementById(`og_${eye}_${f}`);
+                if (!ogEl || ogEl.value) return;
+                const fromPresc = fm.querySelector(`input[name="presc_${eye}_${f}"]`)?.value || '';
+                const fromRef = document.getElementById(`ref_${eye}_${f}`)?.value || '';
+                const val = fromPresc || fromRef;
+                if (val) {
+                    ogEl.value = val;
+                    ogEl.placeholder = val;
+                    masterDataSnapshot[ogEl.id] = val;
+                }
+            });
+        });
+
         sv('input[name="lensa"]', trx.lensa || '');
         sv('input[name="keterangan_frame"]', trx.keterangan_frame || '');
 
