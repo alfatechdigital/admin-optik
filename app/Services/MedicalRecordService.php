@@ -55,7 +55,17 @@ class MedicalRecordService
         }
 
         // 2. Prescription (presc_)
+        // POS mengirim data dokter/resep tanpa prefix presc_, jadi dipetakan manual.
         $prescData = $this->extractByPrefix($data, 'presc_');
+        if (empty($prescData['doctor_name'])) {
+            $doctor = ($data['nama_dokter'] ?? null) ?: ($data['asal_resep'] ?? null);
+            if ($doctor) {
+                $prescData['doctor_name'] = $doctor;
+            }
+        }
+        if (empty($prescData['exam_date']) && !empty($data['tgl_resep'])) {
+            $prescData['exam_date'] = $data['tgl_resep'];
+        }
         if ($this->hasClinicalData($prescData)) {
             $medicalRecord->prescription()->updateOrCreate(
                 ['medical_record_id' => $medicalRecord->id],
@@ -66,7 +76,6 @@ class MedicalRecordService
         // 3. Refraction (ref_ or standard names)
         // From transaction, we use the standard names (od_sph, etc.)
         $refData = [
-            'doctor_name' => $data['nama_dokter'] ?? null,
             'od_sc' => $data['od_sc'] ?? null,
             'od_sph' => $data['od_sph'] ?? null,
             'od_cyl' => $data['od_cyl'] ?? null,
@@ -87,6 +96,7 @@ class MedicalRecordService
             'os_cc' => $data['os_cc'] ?? null,
         ];
         if ($this->hasClinicalData($refData)) {
+            $refData['doctor_name'] = $data['nama_dokter'] ?? null;
             $medicalRecord->refraction()->updateOrCreate(
                 ['medical_record_id' => $medicalRecord->id],
                 $refData
